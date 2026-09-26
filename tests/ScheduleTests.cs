@@ -1,0 +1,2 @@
+using OpenBackup;
+var start = new DateTime(2026, 1, 1, 8, 0, 0); var next = ScheduleEngine.NextRun(new BackupSchedule(true, TimeSpan.FromHours(24), start), start.AddHours(25)); if (next != start.AddHours(48)) throw new Exception($"Unexpected next run: {next}"); if (ScheduleEngine.NextRun(new BackupSchedule(false, TimeSpan.FromHours(1), start), start) is not null) throw new Exception("Disabled schedule returned a run"); Console.WriteLine("PASS: schedule next-run calculation");
