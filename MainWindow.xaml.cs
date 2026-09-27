@@ -19,6 +19,8 @@ public partial class MainWindow : Window
         source = profile.Source; destination = profile.Destination; if (source is not null || destination is not null) UpdateProfile();
         ScheduleInterval.SelectedIndex = 2;
         LoadSchedule();
+        var schedulePanel = ScheduleInterval.Parent as System.Windows.Controls.Panel;
+        if (schedulePanel is not null) { var taskButton = new System.Windows.Controls.Button { Content = "Install task", Margin = new Thickness(8, 8, 0, 0), Padding = new Thickness(10, 6, 10, 6) }; taskButton.Click += InstallTask_Click; schedulePanel.Children.Add(taskButton); }
     }
 
     private void ChooseSource_Click(object sender, RoutedEventArgs e) { source = ChooseFolder("Choose the folder to back up"); if (source is not null) { UpdateProfile(); SaveProfile(); } }
@@ -53,6 +55,13 @@ public partial class MainWindow : Window
     }
 
     private void SaveProfile() => ProfileStore.Save(profile with { Source = source, Destination = destination });
+    private void InstallTask_Click(object sender, RoutedEventArgs e)
+    {
+        var hours = ScheduleInterval.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var parsed) ? parsed : 24;
+        var ok = TaskSchedulerService.Install(Environment.ProcessPath ?? System.IO.Path.Combine(AppContext.BaseDirectory, "OpenBackup.exe"), hours);
+        VerificationText.Text = ok ? "Windows Task Scheduler task installed. OpenBackup can now run while closed." : "Windows Task Scheduler could not create the task.";
+        StatusText.Text = ok ? "Task installed" : "Task setup failed";
+    }
 
     private void LoadSchedule()
     {
