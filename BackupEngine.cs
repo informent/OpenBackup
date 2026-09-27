@@ -31,5 +31,22 @@ public static class BackupEngine
     {
         var snapshot = PreviewRestore(snapshotRoot); return snapshot.Files.All(file => { var path = Path.Combine(snapshotRoot, file.RelativePath); return File.Exists(path) && new FileInfo(path).Length == file.Length && Hash(path).Equals(file.Sha256, StringComparison.OrdinalIgnoreCase); });
     }
+    public static int RestoreSnapshot(string snapshotRoot, string target)
+    {
+        var snapshot = PreviewRestore(snapshotRoot);
+        if (!VerifySnapshot(snapshotRoot)) throw new InvalidDataException("Restore stopped because the snapshot failed integrity verification.");
+        Directory.CreateDirectory(target);
+        var root = Path.GetFullPath(target).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        foreach (var file in snapshot.Files)
+        {
+            var source = Path.GetFullPath(Path.Combine(snapshotRoot, file.RelativePath));
+            var destination = Path.GetFullPath(Path.Combine(target, file.RelativePath));
+            if (!destination.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Snapshot contains an unsafe path.");
+            if (File.Exists(destination)) throw new IOException($"Restore stopped because the file already exists: {file.RelativePath}");
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, destination);
+        }
+        return snapshot.Files.Count;
+    }
     private static string Hash(string path) { using var stream = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(stream)); }
 }
