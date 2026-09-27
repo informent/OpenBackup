@@ -11,6 +11,7 @@ public partial class MainWindow : Window
     private string? destination;
     private BackupSnapshot? selected;
     private BackupProfile profile = ProfileStore.Load();
+    private readonly System.Windows.Controls.ComboBox retentionBox = new();
     private static readonly string SettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenBackup", "schedule.json");
 
     public MainWindow()
@@ -20,7 +21,7 @@ public partial class MainWindow : Window
         ScheduleInterval.SelectedIndex = 2;
         LoadSchedule();
         var schedulePanel = ScheduleInterval.Parent as System.Windows.Controls.Panel;
-        if (schedulePanel is not null) { var taskButton = new System.Windows.Controls.Button { Content = "Install task", Margin = new Thickness(8, 8, 0, 0), Padding = new Thickness(10, 6, 10, 6) }; taskButton.Click += InstallTask_Click; schedulePanel.Children.Add(taskButton); }
+        if (schedulePanel is not null) { var retentionLabel = new TextBlock { Text = "Keep", Margin = new Thickness(12, 11, 4, 0), VerticalAlignment = VerticalAlignment.Center }; retentionBox.Width = 86; retentionBox.ItemsSource = new[] { 3, 7, 10, 30 }; retentionBox.SelectedItem = profile.RetentionCount is 3 or 7 or 10 or 30 ? profile.RetentionCount : 10; retentionBox.SelectionChanged += RetentionChanged; var taskButton = new System.Windows.Controls.Button { Content = "Install task", Margin = new Thickness(8, 8, 0, 0), Padding = new Thickness(10, 6, 10, 6) }; taskButton.Click += InstallTask_Click; var logButton = new System.Windows.Controls.Button { Content = "View log", Margin = new Thickness(8, 8, 0, 0), Padding = new Thickness(10, 6, 10, 6) }; logButton.Click += ViewLog_Click; schedulePanel.Children.Add(retentionLabel); schedulePanel.Children.Add(retentionBox); schedulePanel.Children.Add(taskButton); schedulePanel.Children.Add(logButton); }
     }
 
     private void ChooseSource_Click(object sender, RoutedEventArgs e) { source = ChooseFolder("Choose the folder to back up"); if (source is not null) { UpdateProfile(); SaveProfile(); } }
@@ -55,6 +56,8 @@ public partial class MainWindow : Window
     }
 
     private void SaveProfile() => ProfileStore.Save(profile with { Source = source, Destination = destination });
+    private void RetentionChanged(object sender, SelectionChangedEventArgs e) { if (retentionBox.SelectedItem is int count) { profile = profile with { RetentionCount = count }; ProfileStore.Save(profile with { Source = source, Destination = destination }); } }
+    private void ViewLog_Click(object sender, RoutedEventArgs e) { var text = File.Exists(ActivityLog.PathOnDisk) ? File.ReadAllText(ActivityLog.PathOnDisk) : "No activity has been recorded yet."; System.Windows.MessageBox.Show(text, "OpenBackup activity log", MessageBoxButton.OK, MessageBoxImage.Information); }
     private void InstallTask_Click(object sender, RoutedEventArgs e)
     {
         var hours = ScheduleInterval.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var parsed) ? parsed : 24;
