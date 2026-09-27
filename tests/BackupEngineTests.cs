@@ -1,5 +1,7 @@
 using OpenBackup;
 var root = Path.Combine(Path.GetTempPath(), "openbackup-" + Guid.NewGuid().ToString("N")); var source = Path.Combine(root, "source"); var destination = Path.Combine(root, "snapshots"); Directory.CreateDirectory(source); File.WriteAllText(Path.Combine(source, "notes.txt"), "important");
 var snapshot = BackupEngine.CreateSnapshot(source, destination); if (snapshot.Files.Count != 1 || !BackupEngine.VerifySnapshot(Path.Combine(destination, snapshot.Id))) throw new Exception("Fresh snapshot did not verify.");
+if (!Throws(() => BackupEngine.CreateSnapshot(source, Path.Combine(source, "nested")))) throw new Exception("Nested destination was not rejected.");
 var restore = Path.Combine(root, "restore"); if (BackupEngine.RestoreSnapshot(Path.Combine(destination, snapshot.Id), restore) != 1 || File.ReadAllText(Path.Combine(restore, "notes.txt")) != "important") throw new Exception("Restore did not recreate the original file.");
-File.AppendAllText(Path.Combine(destination, snapshot.Id, "notes.txt"), "changed"); if (BackupEngine.VerifySnapshot(Path.Combine(destination, snapshot.Id))) throw new Exception("Tampered snapshot verified incorrectly."); Directory.Delete(root, true); Console.WriteLine("PASS: snapshot, verified restore, and tamper detection");
+File.AppendAllText(Path.Combine(destination, snapshot.Id, "notes.txt"), "changed"); if (BackupEngine.VerifySnapshot(Path.Combine(destination, snapshot.Id))) throw new Exception("Tampered snapshot verified incorrectly."); Directory.Delete(root, true); Console.WriteLine("PASS: snapshot safety, verified restore, and tamper detection");
+static bool Throws(Action action) { try { action(); return false; } catch (InvalidOperationException) { return true; } }

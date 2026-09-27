@@ -12,7 +12,9 @@ public static class BackupEngine
     public static BackupSnapshot CreateSnapshot(string source, string destination)
     {
         if (!Directory.Exists(source)) throw new DirectoryNotFoundException(source);
-        var id = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"); var root = Path.Combine(destination, id); Directory.CreateDirectory(root);
+        var sourceRoot = Path.GetFullPath(source).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var destinationRoot = Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (destinationRoot.StartsWith(sourceRoot, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("The snapshot destination cannot be inside the source folder.");
+        var id = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"); var root = Path.Combine(destination, id); var suffix = 1; while (Directory.Exists(root)) root = Path.Combine(destination, $"{id}-{suffix++:00}"); Directory.CreateDirectory(root);
         var files = new List<BackupFile>();
         foreach (var path in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
         {
