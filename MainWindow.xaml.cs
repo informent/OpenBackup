@@ -10,17 +10,19 @@ public partial class MainWindow : Window
     private string? source;
     private string? destination;
     private BackupSnapshot? selected;
+    private BackupProfile profile = ProfileStore.Load();
     private static readonly string SettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenBackup", "schedule.json");
 
     public MainWindow()
     {
         InitializeComponent();
+        source = profile.Source; destination = profile.Destination; if (source is not null || destination is not null) UpdateProfile();
         ScheduleInterval.SelectedIndex = 2;
         LoadSchedule();
     }
 
-    private void ChooseSource_Click(object sender, RoutedEventArgs e) { source = ChooseFolder("Choose the folder to back up"); if (source is not null) UpdateProfile(); }
-    private void ChooseDestination_Click(object sender, RoutedEventArgs e) { destination = ChooseFolder("Choose where snapshots should be stored"); if (destination is not null) UpdateProfile(); }
+    private void ChooseSource_Click(object sender, RoutedEventArgs e) { source = ChooseFolder("Choose the folder to back up"); if (source is not null) { UpdateProfile(); SaveProfile(); } }
+    private void ChooseDestination_Click(object sender, RoutedEventArgs e) { destination = ChooseFolder("Choose where snapshots should be stored"); if (destination is not null) { UpdateProfile(); SaveProfile(); } }
     private string? ChooseFolder(string description) { using var dialog = new Forms.FolderBrowserDialog { Description = description }; return dialog.ShowDialog() == Forms.DialogResult.OK ? dialog.SelectedPath : null; }
     private void UpdateProfile() { ProfileName.Text = source is null || destination is null ? "Profile in progress" : new DirectoryInfo(source).Name; ProfilePath.Text = $"{source ?? "Source not selected"}  →  {destination ?? "Destination not selected"}"; }
 
@@ -46,9 +48,11 @@ public partial class MainWindow : Window
         if (ScheduleInterval.SelectedItem is not ComboBoxItem item || item.Tag is not string hoursText || !double.TryParse(hoursText, out var hours)) return;
         var schedule = new BackupSchedule(ScheduleEnabled.IsChecked == true, TimeSpan.FromHours(hours), DateTime.Now);
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        File.WriteAllText(SettingsPath, System.Text.Json.JsonSerializer.Serialize(schedule));
+        File.WriteAllText(SettingsPath, System.Text.Json.JsonSerializer.Serialize(schedule)); profile = profile with { Source = source, Destination = destination, Schedule = schedule }; ProfileStore.Save(profile);
         UpdateNextRun(schedule);
     }
+
+    private void SaveProfile() => ProfileStore.Save(profile with { Source = source, Destination = destination });
 
     private void LoadSchedule()
     {
