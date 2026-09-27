@@ -9,7 +9,7 @@
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="App.xaml.cs;MainWindow.xaml.cs;BackupEngine.cs;ScheduleEngine.cs;ProfileStore.cs;ScheduledRunner.cs;TaskSchedulerService.cs" />
+    <Compile Include="App.xaml.cs;MainWindow.xaml.cs;BackupEngine.cs;ScheduleEngine.cs;ProfileStore.cs;ScheduledRunner.cs;TaskSchedulerService.cs;RetentionEngine.cs;ActivityLog.cs" />
     <ApplicationDefinition Include="App.xaml" /><Page Include="MainWindow.xaml" />
   </ItemGroup>
 </Project>
