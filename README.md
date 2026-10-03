@@ -4,6 +4,8 @@ OpenBackup is a local-first Windows backup application focused on one promise: a
 
 OpenBackup creates versioned snapshots with SHA-256 manifests, preflighted restores, persisted profiles, and schedule-aware unattended execution. Snapshot creation is atomic: incomplete work stays in a temporary folder and is removed after a failure. Restore preflight validates every hash, length, relative path, duplicate, and destination collision before the first file is copied. Use the dashboard's **Install task** action to register Windows Task Scheduler, or run the published executable with `--run-scheduled`. It never deletes source files or uploads data.
 
+Version 1.5 hardens retention cleanup with an inspectable plan. Only direct, non-reparse snapshot folders whose manifest ID matches the folder are eligible; candidates are ordered by manifest creation time, sized before deletion, and revalidated immediately before removal. Decoy, malformed, and inaccessible folders are reported and preserved.
+
 For a local install, place `OpenBackup.exe` beside `Install.ps1` and run `powershell -ExecutionPolicy Bypass -File .\Install.ps1`. The installer creates a desktop shortcut. `Uninstall.ps1` removes only the application and shortcut; it never removes backup snapshots.
 
 MIT licensed.
